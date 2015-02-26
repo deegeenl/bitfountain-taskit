@@ -42,12 +42,16 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
             if let segueIdentifier = SegueIndentifier(rawValue: id)
             {
                 switch segueIdentifier {
+
+                    // show TaskDetailViewController
                     case .SegueToDetailView:
                         let detailViewController = segue.destinationViewController as TaskDetailViewController
                         let indexPath = self.tableView.indexPathForSelectedRow()
                         let thisTask = fetchedResultsController.objectAtIndexPath(indexPath!) as TaskModel
                         detailViewController.detailTaskModel = thisTask
                         detailViewController.delegate = self
+
+                    // show AddTaskViewController
                     case .SegueToAddTask:
                         let addTaskViewController = segue.destinationViewController as AddTaskViewController
                         addTaskViewController.delegate = self
@@ -68,7 +72,7 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         if fetchedResultsController.sections?.count == 1 // only one type of tasks
         {
             let task = fetchedResultsController.fetchedObjects![0] as TaskModel
-            return task.completed.boolValue ? "Done" : "To Do"
+            return task.completed ? "Done" : "To Do"
         }
         
         return section == 0 ? "To Do" : "Done"
@@ -101,10 +105,14 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
     
     // MARK: UITableViewDelegate protocol methods
     
+    
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath)
     {
-        println("selected \(indexPath.row)")
-        performSegueWithIdentifier("showTaskDetail", sender: self)
+        // only perform segue if there are tasks, otherwise we're selecting an empty cell
+        if fetchedResultsController.fetchedObjects?.count > 0
+        {
+            performSegueWithIdentifier("showTaskDetail", sender: self)
+        }
     }
     
     func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath)
@@ -127,6 +135,7 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         if let indexPath = tableView.indexPathForSelectedRow()
         {
             task = fetchedResultsController.objectAtIndexPath(indexPath) as TaskModel
+            tableView.deselectRowAtIndexPath(indexPath, animated: true)
         }
         else
         {
