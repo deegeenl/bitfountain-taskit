@@ -59,34 +59,44 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
     
     // MARK: - UITableViewDataSource protocol methods
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        return fetchedResultsController.sections!.count
+        // if there are no tasks, return 1 to display an empty cell
+        return fetchedResultsController.sections!.count == 0 ? 1 : fetchedResultsController.sections!.count
     }
     
     func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        
+        if fetchedResultsController.sections?.count == 1 // only one type of tasks
+        {
+            let task = fetchedResultsController.fetchedObjects![0] as TaskModel
+            return task.completed.boolValue ? "Done" : "To Do"
+        }
+        
         return section == 0 ? "To Do" : "Done"
     }
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int
     {
-        return fetchedResultsController.sections![section].numberOfObjects
+        return fetchedResultsController.sections?.count > 0 ? fetchedResultsController.sections![section].numberOfObjects : 1
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell
     {
-        if fetchedResultsController.sections![indexPath.section].numberOfObjects > 0
+        if fetchedResultsController.sections?.count > 0 // there are tasks in store
         {
-            var cell: TaskCell = tableView.dequeueReusableCellWithIdentifier("taskCell") as TaskCell
-            let task = fetchedResultsController.objectAtIndexPath(indexPath) as TaskModel
-            cell.taskLabel.text = task.task
-            cell.dateLabel.text = Date.toString(date: task.date)
-            cell.descriptionLabel.text = task.subtask
-            return cell
+            if fetchedResultsController.sections![indexPath.section].numberOfObjects > 0 // there are tasks in the section
+            {
+                var cell: TaskCell = tableView.dequeueReusableCellWithIdentifier("taskCell") as TaskCell
+                let task = fetchedResultsController.objectAtIndexPath(indexPath) as TaskModel
+                cell.taskLabel.text = task.task
+                cell.dateLabel.text = Date.toString(date: task.date)
+                cell.descriptionLabel.text = task.subtask
+                return cell
+            }
         }
-        else
-        {
-            var cell: EmptyTaskCell = tableView.dequeueReusableCellWithIdentifier("emptyCell") as EmptyTaskCell
-            return cell
-        }
+        
+        // there are no tasks in store
+        var cell: EmptyTaskCell = tableView.dequeueReusableCellWithIdentifier("emptyCell") as EmptyTaskCell
+        return cell
     }
     
     // MARK: UITableViewDelegate protocol methods
@@ -104,8 +114,7 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
             return
         }
         
-        let swipedTask = fetchedResultsController.objectAtIndexPath(indexPath) as TaskModel
-        swipedTask.completed = !swipedTask.completed.boolValue
+        managedObjectContext.deleteObject(fetchedResultsController.objectAtIndexPath(indexPath) as TaskModel)
         (UIApplication.sharedApplication().delegate as AppDelegate).saveContext()
     }
     
@@ -141,6 +150,7 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
     
     // MARK: Helper functions
     
+    // Boiler plate to setup the fetchedResultsContoller, called in viewDidLoad()
     private func setupFetchRequestController()
     {
         let fetchRequest = NSFetchRequest(entityName: "TaskModel")
